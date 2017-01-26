@@ -2379,3 +2379,47 @@ func TestIssue683(t *testing.T) {
 		}
 	})
 }
+
+func TestMapOverflow(t *testing.T) {
+	withTestProcess("mapoverflow", t, func(p *Process, fixutre protest.Fixture) {
+		assertNoError(p.Continue(), t, "Continue()")
+
+		seen := make([]bool, 800)
+
+		start := 0
+		for {
+			var m *Variable
+			var err error
+
+			if start == 0 {
+				m, err = evalVariable(p, "m")
+			} else {
+				m, err = evalVariable(p, fmt.Sprintf("m[%d:]", start))
+			}
+			assertNoError(err, t, fmt.Sprintf("evalVariable(m[%d:])", start))
+			assertNoError(m.Unreadable, t, "m is unreadable")
+
+			for i := 0; i < len(m.Children); i += 2 {
+				key, value := &m.Children[i], &m.Children[i+1]
+				keyv, _ := constant.Int64Val(key.Value)
+				valuev, _ := constant.Int64Val(value.Value)
+				if keyv != valuev {
+					t.Fatalf("key/value mismatch %v %v\n", key, value)
+				}
+				seen[int(keyv)] = true
+			}
+
+			if len(m.Children) < 2*normalLoadConfig.MaxArrayValues {
+				break
+			}
+
+			start += 64
+		}
+
+		for i := range seen {
+			if !seen[i] {
+				t.Fatalf("value %d not seen", i)
+			}
+		}
+	})
+}
