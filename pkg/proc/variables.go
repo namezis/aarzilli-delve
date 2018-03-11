@@ -1702,12 +1702,27 @@ func (v *Variable) loadInterface(recurseLevel int, loadData bool, cfg LoadConfig
 		// find out what the concrete type is
 		_type = _type.maybeDereference()
 
+		var typestring string
+
+		var strOff int64
+		if strField := _type.loadFieldNamed("str"); strField != nil && strField.Value != nil {
+			strOff, _ = constant.Int64Val(strField.Value)
+			typestring, _, _, err = resolveNameOff(_type.bi, _type.Addr, uintptr(strOff), _type.mem)
+			if err != nil {
+				typestring = fmt.Sprintf("error %v\n", err)
+			}
+		}
+
+		fmt.Printf("inteface variable %q searching for name of (concrete) type at %#x (%q)\n", v.Name, _type.Addr, typestring)
+
 		var typename string
 		typename, kind, err = nameOfRuntimeType(_type)
 		if err != nil {
 			v.Unreadable = fmt.Errorf("invalid interface type: %v", err)
 			return
 		}
+
+		fmt.Printf("\tdone %q\n", typename)
 
 		typ, err = v.bi.findType(typename)
 		if err != nil {
