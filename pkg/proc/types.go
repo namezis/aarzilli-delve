@@ -349,6 +349,10 @@ type nameOfRuntimeTypeEntry struct {
 // _type is a non-loaded Variable pointing to runtime._type struct in the target.
 // The returned string is in the format that's used in DWARF data
 func nameOfRuntimeType(_type *Variable) (typename string, kind int64, err error) {
+	fmt.Printf("\tnameOfRuntimeType(%#x)\n", _type.Addr)
+	defer func() {
+		fmt.Printf("\tnameOfRuntimeType(%#x) done %q %v %v\n", _type.Addr, typename, kind, err)
+	}()
 	if e, ok := _type.bi.nameOfRuntimeType[_type.Addr]; ok {
 		return e.typename, e.kind, nil
 	}

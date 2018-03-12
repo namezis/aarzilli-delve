@@ -1713,16 +1713,15 @@ func (v *Variable) loadInterface(recurseLevel int, loadData bool, cfg LoadConfig
 			}
 		}
 
-		fmt.Printf("inteface variable %q searching for name of (concrete) type at %#x (%q)\n", v.Name, _type.Addr, typestring)
+		fmt.Printf("inteface variable %q searching for name of (concrete) type at %#x (%q).\n", v.Name, _type.Addr, typestring)
 
 		var typename string
 		typename, kind, err = nameOfRuntimeType(_type)
+		fmt.Printf("\tdone %q (err: %v)\n", typename, err)
 		if err != nil {
 			v.Unreadable = fmt.Errorf("invalid interface type: %v", err)
 			return
 		}
-
-		fmt.Printf("\tdone %q\n", typename)
 
 		typ, err = v.bi.findType(typename)
 		if err != nil {
@@ -1986,6 +1985,7 @@ func (scope *EvalScope) variablesByTag(tag dwarf.Tag, cfg *LoadConfig) ([]*Varia
 			lvn[v.Name] = v
 		}
 		if cfg != nil {
+			fmt.Printf("Load value for %s\n", v.Name)
 			v.loadValue(*cfg)
 		}
 	}

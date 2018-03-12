@@ -869,14 +869,17 @@ func (d *Debugger) convertStacktrace(rawlocs []proc.Stackframe, cfg *proc.LoadCo
 		if cfg != nil && rawlocs[i].Current.Fn != nil {
 			var err error
 			scope := proc.FrameToScope(d.target.BinInfo(), d.target.CurrentThread(), nil, rawlocs[i])
+			fmt.Printf("Frame %d (%s) local variables:\n", i, rawlocs[i].Current.Fn.Name)
 			locals, err := scope.LocalVariables(*cfg)
 			if err != nil {
 				return nil, err
 			}
+			fmt.Printf("Frame %d (%s) arguments:\n", i, rawlocs[i].Current.Fn.Name)
 			arguments, err := scope.FunctionArguments(*cfg)
 			if err != nil {
 				return nil, err
 			}
+			fmt.Printf("Frame %d done\n", i)
 
 			frame.Locals = convertVars(locals)
 			frame.Arguments = convertVars(arguments)
