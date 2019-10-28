@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/go-delve/delve/pkg/goversion"
 	"github.com/spf13/cobra"
 )
 
@@ -73,8 +74,8 @@ Use the flags -s, -r and -b to specify which tests to run. Specifying nothing is
 	go run scripts/make.go test -s basic -b lldb    # if lldb-server is installed
 	go run scripts/make.go test -s basic -b rr      # if rr is installed
 	
-	go run scripts/make.go test -s basic -m pie     # only on linux
-	go run scripts/make.go test -s core -m pie      # only on linux
+	go run scripts/make.go test -s basic -m pie     # on linux (any version of Go) or on windows (if Go >= 1.13)
+	go run scripts/make.go test -s core -m pie      # on linux (any version of Go) or on windows (if Go >= 1.13)
 	go run scripts/make.go test -s 
 `,
 		Run: testCmd,
@@ -297,7 +298,8 @@ func testCmd(cmd *cobra.Command, args []string) {
 			fmt.Println("\nTesting RR backend")
 			testCmdIntl("basic", "", "rr", "normal")
 		}
-		if runtime.GOOS == "linux" {
+		gover, _ := goversion.Installed()
+		if runtime.GOOS == "linux" || (runtime.GOOS == "windows" && gover.AfterOrEqual(goversion.GoVersion{1, 13, -1, 0, 0, ""})) {
 			fmt.Println("\nTesting PIE buildmode, default backend")
 			testCmdIntl("basic", "", "default", "pie")
 			testCmdIntl("core", "", "default", "pie")
