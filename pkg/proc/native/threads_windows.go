@@ -36,9 +36,17 @@ func (t *Thread) singleStep() error {
 		return err
 	}
 
-	_, err = _ResumeThread(t.os.hThread)
-	if err != nil {
-		return err
+	suspendcnt := 0
+
+	for {
+		n, err := _ResumeThread(t.os.hThread)
+		if err != nil {
+			return err
+		}
+		suspendcnt++
+		if n == 1 {
+			break
+		}
 	}
 
 	for {
@@ -63,9 +71,11 @@ func (t *Thread) singleStep() error {
 		})
 	}
 
-	_, err = _SuspendThread(t.os.hThread)
-	if err != nil {
-		return err
+	for i := 0; i < suspendcnt; i++ {
+		_, err = _SuspendThread(t.os.hThread)
+		if err != nil {
+			return err
+		}
 	}
 
 	t.dbp.execPtraceFunc(func() {
