@@ -71,7 +71,7 @@ func (dbp *Process) Recorded() (bool, string) { return false, "" }
 
 // Restart will always return an error in the native proc backend, only for
 // recorded traces.
-func (dbp *Process) Restart(string) error { return proc.ErrNotRecorded }
+func (dbp *Process) RestartInternal(string) error { return proc.ErrNotRecorded }
 
 // Direction will always return an error in the native proc backend, only for
 // recorded traces.

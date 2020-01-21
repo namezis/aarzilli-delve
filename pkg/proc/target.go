@@ -4,6 +4,8 @@ package proc
 type Target struct {
 	Process
 
+	intl ProcessInternal
+
 	// fncallForG stores a mapping of current active function calls.
 	fncallForG map[int]*callInjection
 
@@ -14,9 +16,13 @@ type Target struct {
 }
 
 // NewTarget returns an initialized Target object.
-func NewTarget(p Process) *Target {
+func NewTarget(p interface {
+	Process
+	ProcessInternal
+}) *Target {
 	t := &Target{
 		Process:    p,
+		intl:       p,
 		fncallForG: make(map[int]*callInjection),
 	}
 	t.gcache.init(p.BinInfo())
@@ -43,5 +49,5 @@ func (t *Target) ClearAllGCache() {
 
 func (t *Target) Restart(from string) error {
 	t.ClearAllGCache()
-	return t.Process.Restart(from)
+	return t.intl.RestartInternal(from)
 }

@@ -23,11 +23,6 @@ type RecordingManipulation interface {
 	// Recorded returns true if the current process is a recording and the path
 	// to the trace directory.
 	Recorded() (recorded bool, tracedir string)
-	// Restart restarts the recording from the specified position, or from the
-	// last checkpoint if pos == "".
-	// If pos starts with 'c' it's a checkpoint ID, otherwise it's an event
-	// number.
-	Restart(pos string) error
 	// Direction changes execution direction.
 	Direction(Direction) error
 	// When returns current recording position.
@@ -106,4 +101,15 @@ type BreakpointManipulation interface {
 	SetBreakpoint(addr uint64, kind BreakpointKind, cond ast.Expr) (*Breakpoint, error)
 	ClearBreakpoint(addr uint64) (*Breakpoint, error)
 	ClearInternalBreakpoints() error
+}
+
+// ProcessInternal contains methods of the backend that are needed to
+// implement features of debug.Target but shouldn't be called directly,
+// otherwise.
+type ProcessInternal interface {
+	// Restart restarts the recording from the specified position, or from the
+	// last checkpoint if pos == "".
+	// If pos starts with 'c' it's a checkpoint ID, otherwise it's an event
+	// number.
+	RestartInternal(pos string) error
 }

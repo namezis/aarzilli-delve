@@ -834,7 +834,7 @@ func (p *Process) Detach(kill bool) error {
 }
 
 // Restart will restart the process from the given position.
-func (p *Process) Restart(pos string) error {
+func (p *Process) RestartInternal(pos string) error {
 	if p.tracedir == "" {
 		return proc.ErrNotRecorded
 	}
