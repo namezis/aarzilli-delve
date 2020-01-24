@@ -86,11 +86,12 @@ func Launch(cmd []string, wd string, foreground bool, _ []string) (*proc.Target,
 	dbp.pid = p.Pid
 	dbp.childProcess = true
 
-	if err = dbp.initialize(argv0Go, []string{}); err != nil {
+	tgt, err := dbp.initialize(argv0Go, []string{})
+	if err != nil {
 		dbp.Detach(true)
 		return nil, err
 	}
-	return proc.NewTarget(dbp, true), nil
+	return tgt, nil
 }
 
 func initialize(dbp *Process) error {
@@ -175,11 +176,12 @@ func Attach(pid int, _ []string) (*proc.Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = dbp.initialize(exepath, []string{}); err != nil {
+	tgt, err := dbp.initialize(exepath, []string{})
+	if err != nil {
 		dbp.Detach(true)
 		return nil, err
 	}
-	return proc.NewTarget(dbp, true), nil
+	return tgt, nil
 }
 
 // kill kills the process.
@@ -231,7 +233,7 @@ func (dbp *Process) addThread(hThread syscall.Handle, threadID int, attach, susp
 	thread.os.hThread = hThread
 	dbp.threads[threadID] = thread
 	if dbp.currentThread == nil {
-		dbp.SwitchThread(thread.ID)
+		dbp.currentThread = dbp.threads[threadID]
 	}
 	if suspendNewThreads {
 		_, err := _SuspendThread(thread.os.hThread)
