@@ -445,8 +445,6 @@ func newGVariable(thread Thread, gaddr uintptr, deref bool) (*Variable, error) {
 		return nil, err
 	}
 
-	name := ""
-
 	if deref {
 		typ = &godwarf.PtrType{
 			CommonType: godwarf.CommonType{
@@ -457,11 +455,9 @@ func newGVariable(thread Thread, gaddr uintptr, deref bool) (*Variable, error) {
 			},
 			Type: typ,
 		}
-	} else {
-		name = "runtime.curg"
 	}
 
-	return newVariableFromThread(thread, name, gaddr, typ), nil
+	return newVariableFromThread(thread, "", gaddr, typ), nil
 }
 
 // GetG returns information on the G (goroutine) that is executing on this thread.

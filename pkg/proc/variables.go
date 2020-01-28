@@ -119,8 +119,8 @@ type Variable struct {
 	loaded     bool
 	Unreadable error
 
-	LocationExpr string // location expression
-	DeclLine     int64  // line number of this variable's declaration
+	LocationExpr *locationExpr // location expression
+	DeclLine     int64         // line number of this variable's declaration
 }
 
 // LoadConfig controls how variables are loaded from the targets memory.
@@ -591,11 +591,18 @@ func (v *Variable) parseG() (*G, error) {
 		}
 	}
 
-	stkbarVar := v.loadFieldNamed("stkbar")
-	stkbarVarPosFld := v.loadFieldNamed("stkbarPos")
+	var stkbarVar *Variable
 	var stkbarPos int64
-	if stkbarVarPosFld != nil { // stack barriers were removed in Go 1.9
-		stkbarPos, _ = constant.Int64Val(stkbarVarPosFld.Value)
+
+	if !v.bi.nostkbar {
+		stkbarVar = v.loadFieldNamed("stkbar")
+		stkbarVarPosFld := v.loadFieldNamed("stkbarPos")
+		if stkbarVarPosFld != nil { // stack barriers were removed in Go 1.9
+			stkbarPos, _ = constant.Int64Val(stkbarVarPosFld.Value)
+		}
+		if stkbarVar == nil && stkbarVarPosFld == nil {
+			v.bi.nostkbar = true
+		}
 	}
 
 	status := loadInt64Maybe("atomicstatus")
@@ -605,6 +612,8 @@ func (v *Variable) parseG() (*G, error) {
 	}
 
 	f, l, fn := v.bi.PCToLine(uint64(pc))
+
+	v.Name = "runtime.curg"
 
 	g := &G{
 		ID:         int(id),
