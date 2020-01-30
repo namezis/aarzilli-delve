@@ -16,6 +16,7 @@ type Process interface {
 	ProcessManipulation
 	BreakpointManipulation
 	RecordingManipulation
+	MagicThreadExec(func())
 }
 
 // RecordingManipulation is an interface for manipulating process recordings.

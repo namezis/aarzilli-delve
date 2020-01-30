@@ -530,18 +530,18 @@ func ThreadScope(thread Thread) (*EvalScope, error) {
 
 // GoroutineScope returns an EvalScope for the goroutine running on this thread.
 func GoroutineScope(thread Thread) (*EvalScope, error) {
-	locations, err := ThreadStacktrace(thread, 1)
+	locations, err := ThreadStacktrace(thread, 0)
 	if err != nil {
 		return nil, err
 	}
 	if len(locations) < 1 {
 		return nil, errors.New("could not decode first frame")
 	}
-	g, err := GetG(thread)
+	/*g, err := GetG(thread)
 	if err != nil {
 		return nil, err
-	}
-	return FrameToScope(thread.BinInfo(), thread, g, locations...), nil
+	}*/
+	return FrameToScope(thread.BinInfo(), thread, nil, locations...), nil
 }
 
 // onNextGoroutine returns true if this thread is on the goroutine requested by the current 'next' command

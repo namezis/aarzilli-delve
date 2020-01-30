@@ -56,6 +56,7 @@ func registers(thread *Thread, floatingPoint bool) (proc.Registers, error) {
 		return nil, err
 	}
 	r := &linutil.AMD64Registers{&regs, nil, nil}
+	floatingPoint = false
 	if floatingPoint {
 		var fpregset linutil.AMD64Xstate
 		r.Fpregs, fpregset, err = thread.fpRegisters()

@@ -31,6 +31,7 @@ type Process struct {
 	resumeChan          chan<- struct{}
 	ptraceChan          chan func()
 	ptraceDoneChan      chan interface{}
+	insidePtrace        bool
 	childProcess        bool // this process was launched, not attached to
 	manualStopRequested bool
 
@@ -309,12 +310,20 @@ func (dbp *Process) handlePtraceFuncs() {
 	runtime.LockOSThread()
 
 	for fn := range dbp.ptraceChan {
+		dbp.insidePtrace = true
 		fn()
-		dbp.ptraceDoneChan <- nil
+		dbp.insidePtrace = false
+		if !dbp.exited {
+			dbp.ptraceDoneChan <- nil
+		}
 	}
 }
 
 func (dbp *Process) execPtraceFunc(fn func()) {
+	if dbp.insidePtrace {
+		fn()
+		return
+	}
 	dbp.ptraceChan <- fn
 	<-dbp.ptraceDoneChan
 }
@@ -329,4 +338,8 @@ func (dbp *Process) postExit() {
 func (dbp *Process) writeSoftwareBreakpoint(thread *Thread, addr uint64) error {
 	_, err := thread.WriteMemory(uintptr(addr), dbp.bi.Arch.BreakpointInstruction())
 	return err
+}
+
+func (dbp *Process) MagicThreadExec(fn func()) {
+	dbp.execPtraceFunc(fn)
 }

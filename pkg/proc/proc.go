@@ -135,6 +135,14 @@ func Next(dbp *Target) (err error) {
 // process. It will continue until it hits a breakpoint
 // or is otherwise stopped.
 func Continue(dbp *Target) error {
+	var err error
+	dbp.MagicThreadExec(func() {
+		err = continueInternal(dbp)
+	})
+	return err
+}
+
+func continueInternal(dbp *Target) error {
 	if _, err := dbp.Valid(); err != nil {
 		return err
 	}
@@ -302,6 +310,11 @@ func pickCurrentThread(dbp *Target, trapthread Thread, threads []Thread) error {
 		if bp := th.Breakpoint(); bp.Active {
 			return dbp.SwitchThread(th.ThreadID())
 		}
+	}
+	if bp := trapthread.Breakpoint(); bp.Breakpoint != nil && !bp.Active {
+		dbp.InternalSetCurrentThread(trapthread)
+		dbp.selectedGoroutine = nil
+		return nil
 	}
 	return dbp.SwitchThread(trapthread.ThreadID())
 }
@@ -716,7 +729,7 @@ func FrameToScope(bi *BinaryInfo, thread MemoryReadWriter, g *G, frames ...Stack
 	// Creates a cacheMem that will preload the entire stack frame the first
 	// time any local variable is read.
 	// Remember that the stack grows downward in memory.
-	minaddr := frames[0].Regs.SP()
+	/*minaddr := frames[0].Regs.SP()
 	var maxaddr uint64
 	if len(frames) > 1 && frames[0].SystemStack == frames[1].SystemStack {
 		maxaddr = uint64(frames[1].Regs.CFA)
@@ -725,7 +738,7 @@ func FrameToScope(bi *BinaryInfo, thread MemoryReadWriter, g *G, frames ...Stack
 	}
 	if maxaddr > minaddr && maxaddr-minaddr < maxFramePrefetchSize {
 		thread = cacheMemory(thread, uintptr(minaddr), int(maxaddr-minaddr))
-	}
+	}*/
 
 	s := &EvalScope{Location: frames[0].Call, Regs: frames[0].Regs, Mem: thread, g: g, BinInfo: bi, frameOffset: frames[0].FrameOffset()}
 	s.PC = frames[0].lastpc

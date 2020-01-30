@@ -604,6 +604,10 @@ func (p *Process) InternalSetCurrentThread(th proc.Thread) {
 	p.currentThread = th.(*Thread)
 }
 
+func (p *Process) MagicThreadExec(fn func()) {
+	fn()
+}
+
 const (
 	interruptSignal  = 0x2
 	breakpointSignal = 0x5

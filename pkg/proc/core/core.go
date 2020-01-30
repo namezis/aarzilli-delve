@@ -449,3 +449,7 @@ func (p *Process) FindThread(threadID int) (proc.Thread, bool) {
 func (p *Process) InternalSetCurrentThread(th proc.Thread) {
 	p.currentThread = th.(*Thread)
 }
+
+func (p *Process) MagicThreadExec(fn func()) {
+	fn()
+}

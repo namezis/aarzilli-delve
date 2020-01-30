@@ -93,7 +93,8 @@ func (frame *Stackframe) FramePointerOffset() int64 {
 // ThreadStacktrace returns the stack trace for thread.
 // Note the locations in the array are return addresses not call addresses.
 func ThreadStacktrace(thread Thread, depth int) ([]Stackframe, error) {
-	g, _ := GetG(thread)
+	//g, _ := GetG(thread)
+	var g *G = nil
 	if g == nil {
 		regs, err := thread.Registers(true)
 		if err != nil {
