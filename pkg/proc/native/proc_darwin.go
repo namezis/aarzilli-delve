@@ -422,7 +422,8 @@ func (dbp *nativeProcess) resume() error {
 }
 
 // stop stops all running threads and sets breakpoints
-func (dbp *nativeProcess) stop(trapthread *nativeThread) (err error) {
+func (dbp *nativeProcess) stop(ptrapthread **nativeThread) (err error) {
+	trapthread := *ptrapthread
 	if dbp.exited {
 		return &proc.ErrProcessExited{Pid: dbp.Pid()}
 	}

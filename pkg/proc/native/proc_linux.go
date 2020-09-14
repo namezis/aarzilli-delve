@@ -472,7 +472,8 @@ func (dbp *nativeProcess) resume() error {
 }
 
 // stop stops all running threads and sets breakpoints
-func (dbp *nativeProcess) stop(trapthread *nativeThread) (err error) {
+func (dbp *nativeProcess) stop(ptrapthread **nativeThread) (err error) {
+	trapthread := *ptrapthread
 	if dbp.exited {
 		return &proc.ErrProcessExited{Pid: dbp.Pid()}
 	}
@@ -524,6 +525,8 @@ func (dbp *nativeProcess) stop(trapthread *nativeThread) (err error) {
 		return err
 	}
 
+	switchTrapthread := false
+
 	// set breakpoints on SIGTRAP threads
 	for _, th := range dbp.threads {
 		if th.CurrentBreakpoint.Breakpoint == nil && th.os.setbp {
@@ -531,7 +534,60 @@ func (dbp *nativeProcess) stop(trapthread *nativeThread) (err error) {
 				return err
 			}
 		}
+		if th.CurrentBreakpoint.Breakpoint == nil && th.os.setbp && (th.Status != nil) && ((*sys.WaitStatus)(th.Status).StopSignal() == sys.SIGTRAP) && dbp.BinInfo().Arch.BreakInstrMovesPC() {
+			manualStop := false
+			if th.ThreadID() == trapthread.ThreadID() {
+				dbp.stopMu.Lock()
+				manualStop = dbp.manualStopRequested
+				dbp.stopMu.Unlock()
+			}
+			if !manualStop {
+				// Thread received a SIGTRAP but we don't have a breakpoint for it and
+				// it wasn't sent by a manual stop request. It's either a hardcoded
+				// breakpoint or a phantom breakpoint hit (a breakpoint that was hit but
+				// we have removed before we could receive its signal). Check if it is a
+				// hardcoded breakpoint, otherwise rewind the thread.
+				isHardcodedBreakpoint := false
+				pc, _ := th.PC()
+				for _, bpinstr := range [][]byte{
+					dbp.BinInfo().Arch.BreakpointInstruction(),
+					dbp.BinInfo().Arch.AltBreakpointInstruction()} {
+					if bpinstr == nil {
+						continue
+					}
+					buf := make([]byte, len(bpinstr))
+					_, _ = th.ReadMemory(buf, pc-uint64(len(buf)))
+					if bytes.Equal(buf, bpinstr) {
+						isHardcodedBreakpoint = true
+						break
+					}
+				}
+				if !isHardcodedBreakpoint {
+					// phantom breakpoint hit
+					_ = th.SetPC(pc - uint64(len(dbp.BinInfo().Arch.BreakpointInstruction())))
+					th.os.setbp = false
+					if trapthread.ThreadID() == th.ThreadID() {
+						// Will switch to a different thread for trapthread because we don't
+						// want pkg/proc to believe that this thread was stopped by a
+						// hardcoded breakpoint.
+						switchTrapthread = true
+					}
+				}
+			}
+		}
 	}
+
+	if switchTrapthread {
+		*ptrapthread = nil
+		for _, th := range dbp.threads {
+			if th.os.setbp && th.ThreadID() != trapthread.ThreadID() {
+				fmt.Printf("Trapthread switch successful\n")
+				*ptrapthread = th
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
