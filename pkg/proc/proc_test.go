@@ -4519,6 +4519,7 @@ func TestIssue1615(t *testing.T) {
 
 func TestCgoStacktrace2(t *testing.T) {
 	skipOn(t, "upstream issue", "windows")
+	skipOn(t, "broken", "386")
 	protest.MustHaveCgo(t)
 	// If a panic happens during cgo execution the stacktrace should show the C
 	// function that caused the problem.
@@ -4527,7 +4528,10 @@ func TestCgoStacktrace2(t *testing.T) {
 		frames, err := proc.ThreadStacktrace(p.CurrentThread(), 100)
 		assertNoError(err, t, "Stacktrace()")
 		logStacktrace(t, p.BinInfo(), frames)
-		stacktraceCheck(t, []string{"C.sigsegv", "C.testfn", "main.main"}, frames)
+		m := stacktraceCheck(t, []string{"C.sigsegv", "C.testfn", "main.main"}, frames)
+		if m == nil {
+			t.Fatal("see previous loglines")
+		}
 	})
 }
 
