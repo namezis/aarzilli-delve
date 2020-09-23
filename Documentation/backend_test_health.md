@@ -1,6 +1,7 @@
 Tests skipped by each supported backend:
 
-* 386 skipped = 1.4% (2/145)
+* 386 skipped = 2.1% (3/145)
+	* 1 broken
 	* 2 broken - cgo stacktraces
 * arm64 skipped = 2.1% (3/145)
 	* 1 broken
