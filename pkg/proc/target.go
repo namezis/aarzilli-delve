@@ -34,6 +34,9 @@ type Target struct {
 	// case only one will be reported.
 	StopReason StopReason
 
+	// currentThread is the thread that will be used by next/step/stepout and to evaluate variables if no goroutine is selected.
+	currentThread Thread
+
 	// Goroutine that will be used by default to set breakpoint, eval variables, etc...
 	// Normally selectedGoroutine is currentThread.GetG, it will not be only if SwitchGoroutine is called with a goroutine that isn't attached to a thread
 	selectedGoroutine *G
@@ -101,7 +104,7 @@ func DisableAsyncPreemptEnv() []string {
 }
 
 // NewTarget returns an initialized Target object.
-func NewTarget(p Process, cfg NewTargetConfig) (*Target, error) {
+func NewTarget(p Process, currentThread Thread, cfg NewTargetConfig) (*Target, error) {
 	entryPoint, err := p.EntryPoint()
 	if err != nil {
 		return nil, err
@@ -118,13 +121,14 @@ func NewTarget(p Process, cfg NewTargetConfig) (*Target, error) {
 	}
 
 	t := &Target{
-		Process:    p,
-		proc:       p.(ProcessInternal),
-		fncallForG: make(map[int]*callInjection),
-		StopReason: cfg.StopReason,
+		Process:       p,
+		proc:          p.(ProcessInternal),
+		fncallForG:    make(map[int]*callInjection),
+		StopReason:    cfg.StopReason,
+		currentThread: currentThread,
 	}
 
-	g, _ := GetG(p.CurrentThread())
+	g, _ := GetG(currentThread)
 	t.selectedGoroutine = g
 
 	t.createUnrecoveredPanicBreakpoint()
@@ -164,10 +168,11 @@ func (t *Target) ClearAllGCache() {
 // Restarting of a normal process happens at a higher level (debugger.Restart).
 func (t *Target) Restart(from string) error {
 	t.ClearAllGCache()
-	err := t.proc.Restart(from)
+	currentThread, err := t.proc.Restart(from)
 	if err != nil {
 		return err
 	}
+	t.currentThread = currentThread
 	t.selectedGoroutine, _ = GetG(t.CurrentThread())
 	if from != "" {
 		t.StopReason = StopManual
@@ -203,7 +208,7 @@ func (p *Target) SwitchThread(tid int) error {
 		return err
 	}
 	if th, ok := p.FindThread(tid); ok {
-		p.proc.SetCurrentThread(th)
+		p.currentThread = th
 		p.selectedGoroutine, _ = GetG(p.CurrentThread())
 		return nil
 	}
@@ -240,7 +245,7 @@ func setAsyncPreemptOff(p *Target, v int64) {
 		return
 	}
 	logger := p.BinInfo().logger
-	scope := globalScope(p.BinInfo(), p.BinInfo().Images[0], p.CurrentThread())
+	scope := globalScope(p.BinInfo(), p.BinInfo().Images[0], p.Memory())
 	debugv, err := scope.findGlobal("runtime", "debug")
 	if err != nil || debugv.Unreadable != nil {
 		logger.Warnf("could not find runtime/debug variable (or unreadable): %v %v", err, debugv.Unreadable)
@@ -287,4 +292,11 @@ func (t *Target) createFatalThrowBreakpoint() {
 			bp.Name = FatalThrow
 		}
 	}
+}
+
+// CurrentThread returns the currently selected thread which will be used
+// for next/step/stepout and for reading variables, unless a goroutine is
+// selected.
+func (t *Target) CurrentThread() Thread {
+	return t.currentThread
 }

@@ -72,7 +72,7 @@ func (dbp *nativeProcess) Recorded() (bool, string) { return false, "" }
 
 // Restart will always return an error in the native proc backend, only for
 // recorded traces.
-func (dbp *nativeProcess) Restart(string) error { return proc.ErrNotRecorded }
+func (dbp *nativeProcess) Restart(string) (proc.Thread, error) { return nil, proc.ErrNotRecorded }
 
 // ChangeDirection will always return an error in the native proc backend, only for
 // recorded traces.
@@ -166,8 +166,8 @@ func (dbp *nativeProcess) FindThread(threadID int) (proc.Thread, bool) {
 	return th, ok
 }
 
-// CurrentThread returns the current selected, active thread.
-func (dbp *nativeProcess) CurrentThread() proc.Thread {
+// Memory returns the process memory.
+func (dbp *nativeProcess) Memory() proc.MemoryReadWriter {
 	return dbp.currentThread
 }
 
@@ -254,6 +254,7 @@ func (dbp *nativeProcess) ContinueOnce() (proc.Thread, proc.StopReason, error) {
 			return nil, proc.StopUnknown, err
 		}
 		if trapthread != nil {
+			dbp.currentThread = trapthread
 			return trapthread, proc.StopUnknown, nil
 		}
 	}
@@ -287,7 +288,7 @@ func (dbp *nativeProcess) initialize(path string, debugInfoDirs []string) (*proc
 	if !dbp.childProcess {
 		stopReason = proc.StopAttached
 	}
-	return proc.NewTarget(dbp, proc.NewTargetConfig{
+	return proc.NewTarget(dbp, dbp.currentThread, proc.NewTargetConfig{
 		Path:                path,
 		DebugInfoDirs:       debugInfoDirs,
 		DisableAsyncPreempt: runtime.GOOS == "windows" || runtime.GOOS == "freebsd",
