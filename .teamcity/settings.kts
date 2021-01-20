@@ -50,6 +50,7 @@ project {
         val (os, arch, version) = target.split("/")
         TestBuild(os, arch, version, AbsoluteId("Delve_${os}_${arch}_${version.replace('.', '_')}"))
     }
+    
     tests.map { test ->
         test.os
     }.distinct().forEach { os ->
@@ -77,28 +78,6 @@ class AggregatorBuild(tests: Collection<BuildType>) : BuildType({
         tests.forEach { test ->
             snapshot(test) {
             }
-        }
-    }
-
-    features {
-        pullRequests {
-            vcsRootExtId = "${DslContext.settingsRoot.id}"
-            provider = github {
-                authType = token {
-                    token = "credentialsJSON:5dc93081-e0b2-41e2-b8f0-dea3c96e6426"
-                }
-                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
-            }
-        }
-        commitStatusPublisher {
-            vcsRootExtId = "${DslContext.settingsRoot.id}"
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = personalToken {
-                    token = "credentialsJSON:48af6e38-536d-4acb-ae2d-2fba57b6f3db"
-                }
-            }
-            param("github_oauth_user", "")
         }
     }
 })
@@ -190,21 +169,6 @@ class TestBuild(val os: String, val arch: String, version: String, buildId: Abso
             "windows" -> {
                 matches("teamcity.agent.jvm.os.family", "Windows")
             }
-        }
-    }
-
-    features {
-        pullRequests {
-            vcsRootExtId = "${DslContext.settingsRoot.id}"
-            provider = github {
-                authType = token {
-                    token = "credentialsJSON:5dc93081-e0b2-41e2-b8f0-dea3c96e6426"
-                }
-                filterAuthorRole = PullRequests.GitHubRoleFilter.EVERYBODY
-            }
-        }
-        golang {
-            testFormat = "json"
         }
     }
 })
