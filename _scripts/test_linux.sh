@@ -3,15 +3,14 @@ set -e
 set -x
 
 apt-get -qq update
-apt-get install -y dwz wget make git gcc curl
+apt-get install -y dwz wget make git gcc curl jq
 dwz --version
 
-if [ "$1" = "golatest" ]; then
-  version=$(curl https://golang.org/VERSION?m=text)
-else
-  version=$1
-fi
+version=$1
 arch=$2
+
+curl 'https://golang.org/dl/?mode=json&include=all' | jq '.[].version' --raw-output | egrep ^go$version'($|\.|beta|rc)' | head -1 | cut -c3-
+
 echo "Go $version on $arch"
 
 export GOROOT=/usr/local/go/"$version"
@@ -31,6 +30,5 @@ uname -a
 echo "$PATH"
 echo "$GOROOT"
 echo "$GOPATH"
-
 cd delve
 make test

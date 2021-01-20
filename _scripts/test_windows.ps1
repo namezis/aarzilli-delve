@@ -21,10 +21,9 @@ if (-Not(Test-Path "C:\procdump"))
 }
 
 # Install Go
-if ($version -eq "golatest")
-{
-    $version = Invoke-WebRequest -Uri https://golang.org/VERSION?m=text -UseBasicParsing | Select-Object -ExpandProperty Content
-}
+$version = Invoke-WebRequest -Uri 'https://golang.org/dl/?mode=json&include=all' -UseBasicParsing | foreach {$_.Content} | ConvertFrom-Json | foreach {$_.version} | Select-String -Pattern "^go$version($|\.|beta|rc)" | Select-Object -First 1 | foreach {$_.Line}
+$version = $versoin.substring(2)
+
 Write-Host "Go $version on $arch"
 $env:GOROOT = "C:\go\$version"
 if (-Not(Test-Path $env:GOROOT))
@@ -41,6 +40,7 @@ $env:PATH += ";C:\procdump;C:\mingw64\bin;$env:GOROOT\bin;$env:GOPATH\bin"
 Write-Host $env:PATH
 Write-Host $env:GOROOT
 Write-Host $env:GOPATH
+
 go version
 go env
 mingw32-make test
