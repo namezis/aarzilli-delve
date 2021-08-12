@@ -1705,7 +1705,7 @@ func TestAcceptMulticlient(t *testing.T) {
 			},
 		})
 		if err := server.Run(); err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		<-disconnectChan
 		server.Stop()
