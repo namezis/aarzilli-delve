@@ -292,7 +292,13 @@ func testCmd(cmd *cobra.Command, args []string) {
 
 		fmt.Println("\nTesting")
 		os.Setenv("PROCTEST", "lldb")
-		executeq("sudo", "-E", "go", "test", testFlags(), allPackagesSkipProc())
+		executeq("sudo", "-E", "go", "test", testFlags(), allPackages())
+		return
+	}
+
+	if os.Getenv("TRAVIS") == "true" && runtime.GOARCH == "arm" {
+		fmt.Println("Testing arm architecture")
+		executeq("sudo", "-E", "go", "test", testFlags(), allPackagesSkipForArm())
 		return
 	}
 
@@ -429,7 +435,7 @@ func allPackages() []string {
 }
 
 
-func allPackagesSkipProc() []string {
+func allPackagesSkipForArm() []string {
 	r := []string{}
 	for _, dir := range strings.Split(getoutput("go", "list", "-mod=vendor", "./..."), "\n") {
 		dir = strings.TrimSpace(dir)
