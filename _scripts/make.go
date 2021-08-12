@@ -292,7 +292,7 @@ func testCmd(cmd *cobra.Command, args []string) {
 
 		fmt.Println("\nTesting")
 		os.Setenv("PROCTEST", "lldb")
-		executeq("sudo", "-E", "go", "test", testFlags(), allPackages())
+		executeq("sudo", "-E", "go", "test", testFlags(), allPackagesSkipProc())
 		return
 	}
 
@@ -420,6 +420,20 @@ func allPackages() []string {
 	for _, dir := range strings.Split(getoutput("go", "list", "-mod=vendor", "./..."), "\n") {
 		dir = strings.TrimSpace(dir)
 		if dir == "" || strings.Contains(dir, "/vendor/") || strings.Contains(dir, "/_scripts") {
+			continue
+		}
+		r = append(r, dir)
+	}
+	sort.Strings(r)
+	return r
+}
+
+
+func allPackagesSkipProc() []string {
+	r := []string{}
+	for _, dir := range strings.Split(getoutput("go", "list", "-mod=vendor", "./..."), "\n") {
+		dir = strings.TrimSpace(dir)
+		if dir == "" || strings.Contains(dir, "/vendor/") || strings.Contains(dir, "/_scripts") || strings.Contains(dir, "/proc/") {
 			continue
 		}
 		r = append(r, dir)
