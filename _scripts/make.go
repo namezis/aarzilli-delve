@@ -298,7 +298,7 @@ func testCmd(cmd *cobra.Command, args []string) {
 
 	if os.Getenv("TRAVIS") == "true" && runtime.GOARCH == "arm" {
 		fmt.Println("Testing arm architecture")
-		executeq("sudo", "-E", "go", "test", testFlags(), allPackagesSkipForArm())
+		execute("go", "test", testFlags(), buildFlags(), allPackagesSkipForArm())
 		return
 	}
 
