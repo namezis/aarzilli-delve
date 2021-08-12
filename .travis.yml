@@ -76,7 +76,7 @@ script: >-
            uname -a && \
            make test";
     elif [ $arm_on_arm64 ]; then
-      echo TESTING ARM ON ARM64
+      echo TESTING ARM ON ARM64-
       ls /proc/sys/fs/binfmt_misc/
       export GOARCH=arm
       make test
