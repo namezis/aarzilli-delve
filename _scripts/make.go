@@ -439,7 +439,7 @@ func allPackagesSkipForArm() []string {
 	r := []string{}
 	for _, dir := range strings.Split(getoutput("go", "list", "-mod=vendor", "./..."), "\n") {
 		dir = strings.TrimSpace(dir)
-		if dir == "" || strings.Contains(dir, "/vendor/") || strings.Contains(dir, "/_scripts") || strings.Contains(dir, "/proc/") {
+		if dir == "" || strings.Contains(dir, "/vendor/") || strings.Contains(dir, "/_scripts") || strings.Contains(dir, "/proc") {
 			continue
 		}
 		r = append(r, dir)
